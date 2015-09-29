@@ -3,11 +3,13 @@ using CoursesAPI.Models;
 using CoursesAPI.Services.DataAccess;
 using CoursesAPI.Services.Services;
 using System.Collections.Generic;
+using WebApi.OutputCache.V2;
 
 namespace CoursesAPI.Controllers
 {
 	[RoutePrefix("api/courses")]
-	public class CoursesController : ApiController
+    [AutoInvalidateCacheOutput]
+    public class CoursesController : ApiController
 	{
 		private readonly CoursesServiceProvider _service;
 
@@ -18,6 +20,7 @@ namespace CoursesAPI.Controllers
 
 		[HttpGet]
 		[AllowAnonymous]
+        [CacheOutput(ClientTimeSpan = 50, ServerTimeSpan = 50)]
 		public IHttpActionResult GetCoursesBySemester(string semester = null, int page = 1)
 		{
             string language = Request.Headers.AcceptLanguage.ToString();
@@ -25,7 +28,6 @@ namespace CoursesAPI.Controllers
 		}
 
         [HttpGet]
-        [AllowAnonymous]
         [Route("{id:int}")]
         public IHttpActionResult GetCourseByID(int ID)
         {
@@ -34,15 +36,12 @@ namespace CoursesAPI.Controllers
 
         /// <summary>
         /// </summary>
-        /// <param name="id"></param>
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost]
-		[Route("{id}/teachers")]
-		public IHttpActionResult AddTeacher(int id, AddTeacherViewModel model)
+        public IHttpActionResult AddCourse(AddCourseViewModel model)
 		{
-			var result = _service.AddTeacherToCourse(id, model);
-			return Created("TODO", result);
+			return StatusCode(System.Net.HttpStatusCode.Created);
 		}
 	}
 }
