@@ -24,12 +24,20 @@ namespace CoursesAPI.Controllers
             return Ok(_service.GetCourseInstancesBySemester(semester, page, language));
 		}
 
-		/// <summary>
-		/// </summary>
-		/// <param name="id"></param>
-		/// <param name="model"></param>
-		/// <returns></returns>
-		[HttpPost]
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("{id:int}")]
+        public IHttpActionResult GetCourseByID(int ID)
+        {
+            return Ok(_service.GetCourseInstanceByID(ID));
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
 		[Route("{id}/teachers")]
 		public IHttpActionResult AddTeacher(int id, AddTeacherViewModel model)
 		{

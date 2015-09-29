@@ -52,9 +52,10 @@ namespace CoursesAPI.Services.Services
 		/// <param name="semester"></param>
 		/// <param name="page">1-based index of the requested page.</param>
 		/// <returns></returns>
-		public Envelope<CourseInstanceDTO> GetCourseInstancesBySemester(string semester = null, int page = 1, string language = "en-GB")
+		public List<CourseInstanceDTO> GetCourseInstancesBySemester(string semester = null, int page = 1, string language = "en-GB")
 		{
             const int PAGE_SIZE = 10;
+            bool languageEN = true;
 
             if (page < 1) throw new AppValidationException("PAGE_OUT_OF_BOUNDS");
 
@@ -63,55 +64,53 @@ namespace CoursesAPI.Services.Services
 				semester = "20153";
 			}
 
-            if(language != "is-IS")
-            {
-                language = "en-GB";
-            }
-
-            List<CourseInstanceDTO> courses;
-
             if(language == "is-IS")
             {
-                courses = (from c in _courseInstances.All()
-                    join ct in _courseTemplates.All() on c.CourseID equals ct.CourseID
-                    where c.SemesterID == semester
-                    orderby ct.CourseID
-                    select new CourseInstanceDTO
-                    {
-                        Name = ct.Name,
-                        TemplateID = ct.CourseID,
-                        CourseInstanceID = c.ID,
-                        MainTeacher = ""
-                    }).Skip((page - 1) * PAGE_SIZE).Take(PAGE_SIZE).ToList();
-            }
-            else
-            {
-                courses = (from c in _courseInstances.All()
-                           join ct in _courseTemplates.All() on c.CourseID equals ct.CourseID
-                           where c.SemesterID == semester
-                           orderby ct.CourseID
-                           select new CourseInstanceDTO
-                           {
-                               Name = ct.NameEN,
-                               TemplateID = ct.CourseID,
-                               CourseInstanceID = c.ID,
-                               MainTeacher = ""
-                           }).Skip((page - 1) * PAGE_SIZE).Take(PAGE_SIZE).ToList();
+                languageEN = false;
             }
 
-            var coursesCount = _courseInstances.All().Where(x => x.SemesterID == semester).Count();
-            int pageCount = (coursesCount + PAGE_SIZE - 1) / PAGE_SIZE;
+            List<CourseInstanceDTO> courses = (from c in _courseInstances.All()
+                join ct in _courseTemplates.All() on c.CourseID equals ct.CourseID
+                where c.SemesterID == semester
+                orderby ct.CourseID
+                select new CourseInstanceDTO
+                {
+                    Name = languageEN? ct.NameEN : ct.Name,
+                    TemplateID = ct.CourseID,
+                    CourseInstanceID = c.ID,
+                    MainTeacher = ""
+                }).Skip((page - 1) * PAGE_SIZE).Take(PAGE_SIZE).ToList();
 
-            Envelope<CourseInstanceDTO> envelope = new Envelope<CourseInstanceDTO>
+            return courses;
+		}
+
+        /// <summary>
+        /// Returns a single course with the specified ID
+        /// If no course is found then a course not found exception is thrown
+        /// </summary>
+        /// <param name="courseModel"></param>
+        /// <returns></returns>
+        public CourseInstanceDTO GetCourseInstanceByID(int ID)
+        {
+            var course = _courseInstances.All().SingleOrDefault(x => x.ID == ID);
+            var courseTemplate = _courseTemplates.All().SingleOrDefault(x => x.CourseID == course.CourseID);
+
+            if (course == null || courseTemplate == null)
             {
-                Items = courses,
-                PageCount = pageCount,
-                PageNumber = page,
-                PageSize = PAGE_SIZE,
-                TotalNumberOfItems = coursesCount
+                throw new AppObjectNotFoundException();
+            }
+
+            var returnValue = new CourseInstanceDTO
+            {
+                Name = courseTemplate.Name,
+                CourseInstanceID = course.ID,
+                MainTeacher = "",
+                TemplateID = courseTemplate.CourseID
             };
 
-            return envelope;
-		}
+            return returnValue;
+        }
 	}
+
+    
 }
